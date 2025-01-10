@@ -1,0 +1,330 @@
+<!-- CSS299 Example, adopted from https://threejsfundamentals.org -->
+<!------- สมาชิก ---------
+8  6509490048 ภรลดา บุญธรรม
+17 6509611478 มธุรดา หนูอุดม
+71 6509612054 สิงหราช มาตย์แสง 
+------------------------>
+<!------- ข้อบังคับ ---------
+Topic: Motion graphic artworks
+Use: ThreeJS
+Model: Winter Halloween (scenes.gltf)
+Light: Dirctional light (Moonlight) and spotLight (Flashlight)
+Shader: Toon shader on ghost
+Interact UI : Press W, S, F, G and M
+
+- The scene.gtlf was compounded elements from Blender
+- Ghost animate around the user camera (Animation of articulated objects)
+- Skyboxgg
+- Background music
+- Shadow
+------------------------>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>CS299 Example</title>
+  <style type="text/css">
+    @import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@600;700&display=swap');
+    .tutorial {
+    color: aliceblue;
+    margin: 30px 30px;
+    width: 500px;
+    height: 150px;
+    position: fixed;
+    font-weight: 600;
+    font-size: 20px;
+    font-family: 'Pixelify Sans', sans-serif;
+    }
+    html, body { height: 100%; margin: 0; }
+    #c { width: 100%; height: 100%; display: block; }
+</style>
+</head>
+<body>
+  <!-- UI interaction -->
+  <div class="tutorial"> ๐ Press 🇫 to turn on/off the flashlight <br>๐ Press 🇬 to track the Ghost<br>๐ Press 🇲 to mute the song<br> ๐ Press 🇼 or 🇸 to move the light </div>
+  <canvas id="c"></canvas>
+</body>
+
+
+<script type="module">
+  
+// import libary from threejs fundamental
+import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r132/build/three.module.js';
+import {GLTFLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r132/examples/jsm/loaders/GLTFLoader.js';
+import { PointerLockControls } from 'https://threejsfundamentals.org/threejs/resources/threejs/r132/examples/jsm/controls/PointerLockControls.js';
+
+//declare spotlight
+let spotLight;
+
+function main() {
+  
+  //config canvas with #c css
+  const canvas = document.querySelector('#c');
+  //declare renderer
+  const renderer = new THREE.WebGLRenderer({canvas});
+  //enable shadow render
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMagp;
+
+
+  //constructor for camera
+  const fov = 75;
+  const aspect = 2;  // the canvas default
+  const near = 0.1;
+  const far = 1000;
+  const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  camera.position.set(3, 5, -3); //Player position
+  
+  //Pointer lock Camera setting
+  const controls = new PointerLockControls(camera, canvas);
+  //when click enable point lock camera
+  document.addEventListener('click', () => controls.lock());
+  
+  //declare scene
+  const scene = new THREE.Scene();
+  
+
+  //declare obj var
+  let ghost;
+  let world;
+  let trees;
+  let house;
+  let body;
+  let face;
+  let floor;
+
+
+  const loader = new GLTFLoader();
+      loader.load('scenes.gltf', (gltf) => {
+        const model = gltf.scene;
+        console.log('Loaded GLTF model:', model);
+        scene.add(model);
+        scene.updateMatrixWorld(true);
+          ghost = model.getObjectByName('ghost');
+          
+
+          if (ghost) {
+          body = ghost.getObjectByName('Sphere');
+          face = ghost.getObjectByName('face');
+          // Add toon shading to the ghost
+          const toonMaterial = new THREE.MeshToonMaterial({
+          color: 0xffffff, // Set your desired toon color
+          });
+          const toonMaterialface = new THREE.MeshToonMaterial({
+          color: 0x000000, // Set your desired toon color
+          });
+          ghost.traverse((child) => {
+          if (child.isMesh) {
+             child.rotation.y-=5;//Rotate ghost model to face camera
+            }
+          });
+          face.traverse((child) => {
+          if (child.isMesh) {
+             child.material=toonMaterialface;
+            }
+          });
+          body.traverse((child) => {
+          if (child.isMesh) {
+            child.material=toonMaterial;
+            }
+          });
+        }
+
+        world = model.getObjectByName('world');
+        world.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        trees = model.getObjectByName('trees');
+        trees.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        floor = model.getObjectByName('house');
+        floor.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+  });
+
+  //BGM
+  const listener = new THREE.AudioListener();
+  camera.add(listener);
+  const sound = new THREE.Audio(listener);
+  const audioLoader = new THREE.AudioLoader();
+  //Play auto in every click after refresh webpage and adjust the song
+  document.addEventListener('click', () => {
+      audioLoader.load('bgm.ogg', function (buffer) {
+      sound.setBuffer(buffer);
+      sound.setLoop(true);
+      sound.setVolume(1.0); 
+      sound.play();
+    });
+  });
+ 
+    //Skybox
+    const cubeMapLoader = new THREE.CubeTextureLoader();
+      const cubeMap = cubeMapLoader.load([
+        'cubemap/right.jpg',
+        'cubemap/left.jpg',
+        'cubemap/top.jpg',
+        'cubemap/bottom.jpg',
+        'cubemap/front.jpg',
+        'cubemap/back.jpg',
+      ]);
+    scene.background = cubeMap;
+  {
+  spotLight = new THREE.SpotLight( 0xffffff,0.7,40,Math.PI/7 ); //Adjust Spotlight
+  spotLight.position.copy(camera.position);//Same position with camera
+  spotLight.decay=3;
+  spotLight.castShadow = true;
+  spotLight.shadow.mapSize.width = 1024;
+  spotLight.shadow.mapSize.height = 1024;
+  spotLight.shadow.camera.near = 0.5;
+  spotLight.shadow.camera.far = 500;
+  spotLight.shadow.focus = 1;
+  }
+
+  camera.add( spotLight );  //Add spotlight to be children of camera
+  camera.add(spotLight.target); //Add spotlight target to be children of camera 
+  spotLight.target.position.z = -10;
+  scene.add(camera);
+ 
+  //Add ambientlight
+    const ambientLight = new THREE.AmbientLight(0xffffff,0.2);
+    ambientLight.castShadow=false;
+    scene.add(ambientLight);
+
+  { //Add directional light
+    const color = 0x333333;
+    const intensity = 0.7;
+    const light = new THREE.DirectionalLight(color, intensity);
+    light.castShadow = false;
+    light.position.set(1, 10, -13);
+    scene.add(light);
+  }
+
+
+  //Auto canvas resize
+  function resizeRendererToDisplaySize(renderer) {
+    const canvas = renderer.domElement;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    const needResize = canvas.width !== width || canvas.height !== height;
+    if (needResize) {
+      renderer.setSize(width, height, false);
+    }
+    return needResize;
+  }
+
+  //Variable to contain ghost actual position
+  const ghostPosition = new THREE.Vector3();
+
+  // Add a flag to indicate whether the 'G' key is pressed
+  let toggleGhost =false;
+  const originalFov = 75;
+
+  function render(time) {
+    time *= 0.001;  // convert to seconds
+
+    //auto resize render
+    if (resizeRendererToDisplaySize(renderer)) {
+      const canvas = renderer.domElement;
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;//Zoom camera when camera was tracked
+      camera.updateProjectionMatrix();
+    }
+
+
+    if(ghost){
+      //ghost rotation animation
+      ghost.rotation.y = time*0.1;
+      for(const ghost1 of ghost.children.slice()){
+        //Animation of ghost
+        ghost1.rotation.x = 0.1*Math.cos(time*3); //Around camera
+        ghost1.rotation.z = 0.04*Math.cos(time*1); // up and down
+      }
+      
+
+      //get actual ghost world position 
+      ghost.traverse((child) => {
+          if (child.isMesh) {
+              child.updateMatrixWorld();
+              child.getWorldPosition(ghostPosition);
+            }
+      });
+    }
+//---------------------------------------------------------------------------------------------------------
+    //toggle camera tracking
+    if(toggleGhost){
+      camera.lookAt(ghostPosition);
+    }
+    
+   renderer.render(scene, camera);
+    requestAnimationFrame(render);
+  }
+
+  //change boolean of toggleghost
+  document.addEventListener('keydown', (event) => {
+  if (event.key === 'g' || event.key === 'G') {
+    toggleGhost = !toggleGhost;
+    
+    // Adjust camera FOV for zooming
+    if (toggleGhost) {
+      camera.fov = originalFov / 2; // Adjust the division factor for the desired zoom level
+    } else {
+      camera.fov = originalFov;
+    }
+    
+    camera.updateProjectionMatrix(); // Update the camera's projection matrix
+  }
+});
+
+  //Toggle mute bgm with m key is pressed
+  document.addEventListener('keydown', (event) => {
+        if (event.key === 'm' || event.key === 'M') {
+            if(sound.getVolume() === 1.0){
+              sound.setVolume(0);
+            }
+            else
+              sound.setVolume(1.0);
+        }
+      });
+  // Toggle spotlight on/off when 'F' key is pressed
+  document.addEventListener('keydown', (event) => {
+        if (event.key === 'f' || event.key === 'F') {
+          spotLight.visible = !spotLight.visible;
+        }
+      });
+
+
+  //Incraese or decrease spotlight range with w key
+  document.addEventListener('keydown', (event) => {
+        if (event.key === 'w' || event.key === 'W') {
+          spotLight.target.position.z+=-1;
+        }
+      });
+  //Incraese or decrease spotlight range with s key
+  document.addEventListener('keydown', (event) => {
+        if (event.key === 's' || event.key === 'S') {
+          spotLight.target.position.z+=1;
+        }
+      });
+
+  requestAnimationFrame(render);
+}
+
+main();
+
+
+
+</script>
+</html>
+
