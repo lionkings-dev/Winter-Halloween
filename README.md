@@ -12,7 +12,6 @@ Make sure you have the following installed:
 1. Clone this repository:
    ```sh
    git clone https://github.com/lionkings-dev/Winter-Halloween.git
-   cd 'your-repository-directory'
    ```
 2. Install dependencies:
    ```sh
