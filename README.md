@@ -29,7 +29,7 @@ Make sure you have the following installed:
    ```
 3. Open your browser and go to:
    ```
-   http://localhost:8080/index.html
+   http://localhost:8080/index_final.html
    ```
 
 ## Preview
