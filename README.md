@@ -19,11 +19,15 @@ Make sure you have the following installed:
    ```
 
 ## Running the Project
-1. Start a local development server:
+1. Open terminal and go to your repository directory
+   ```sh
+   cd your_repository_directory
+   ```
+2. Start a local development server:
    ```sh
    http-server
    ```
-2. Open your browser and go to:
+3. Open your browser and go to:
    ```
    http://localhost:8080/index.html
    ```
